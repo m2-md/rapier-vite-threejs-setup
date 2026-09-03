@@ -1,5 +1,9 @@
 # Rapier + Vite + Three.js Setup — Pure ESM vs `-compat`, Measured
 
+<!-- LINKS:BEGIN — üretildi: scripts/sync-repo-links.py · elle düzenleme -->
+**▶ [Live demo](https://m2-md.github.io/rapier-vite-threejs-setup/)** · [Source](https://github.com/m2-md/rapier-vite-threejs-setup)
+<!-- LINKS:END -->
+
 Working code for the article "A Seven-Character Difference, 484 Kilobytes". The
 subject is not one correct configuration but **a comparison of two setup paths** —
 which is why this project deliberately produces four build variants:
