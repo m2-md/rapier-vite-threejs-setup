@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-compat/
+dist-tla/
+dist-inline-trap/
+dist-size/
+dist-cache/
+dist-errors/
+vitest.config.__err.ts
+.env
+.DS_Store
+*.log

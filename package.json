@@ -1,0 +1,41 @@
+{
+  "name": "rapier-vite-threejs-setup",
+  "version": "1.0.0",
+  "description": "Vite + Three.js projesinde Rapier kurulumu: saf ESM (@dimforge/rapier3d + vite-plugin-wasm) ile -compat yolunu yan yana kuran, üç kurulum hatasını gerçekten üreten ve bayt/önbellek farkını ölçen çalışan proje",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "dev:compat": "vite --config vite.config.compat.ts --open /compat.html",
+    "build": "npm run build:esm",
+    "build:esm": "tsc --noEmit && vite build",
+    "build:compat": "tsc --noEmit && vite build --config vite.config.compat.ts --outDir dist-compat",
+    "build:tla": "vite build --config vite.config.tla.ts --outDir dist-tla",
+    "build:inline-trap": "vite build --config vite.config.inline-trap.ts --outDir dist-inline-trap",
+    "preview": "vite preview",
+    "preview:compat": "vite preview --config vite.config.compat.ts --outDir dist-compat",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "size": "node scripts/measure-size.mjs",
+    "cache-proof": "node scripts/cache-proof.mjs",
+    "errors": "node scripts/reproduce-errors.mjs",
+    "dev-proof": "node scripts/dev-optimizer-proof.mjs",
+    "bootstrap-async": "vite-node src/bootstrap-async.ts",
+    "inspect": "node scripts/inspect-compat.mjs"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d": "0.19.3",
+    "@dimforge/rapier3d-compat": "0.19.3",
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "@types/three": "^0.185.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0",
+    "vite-node": "^2.1.9",
+    "vite-plugin-top-level-await": "^1.4.4",
+    "vite-plugin-wasm": "^3.4.1",
+    "vitest": "^2.1.0"
+  }
+}

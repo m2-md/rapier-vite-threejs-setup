@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rapier + Vite + Three.js — -compat yolu (@dimforge/rapier3d-compat)</title>
+    <style>
+      :root {
+        --cyan: #22d3ee;
+        --violet: #a78bfa;
+        --magenta: #f472b6;
+        --ink: #e6e9f2;
+        --muted: rgba(255, 255, 255, 0.55);
+        --glass: rgba(17, 21, 32, 0.55);
+        --hairline: rgba(255, 255, 255, 0.08);
+        --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: radial-gradient(
+          ellipse at 50% 0%,
+          #10141f,
+          #080a11 60%,
+          #05060b
+        );
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      canvas#scene {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      /* Sinematik vignette — bloom yok, bedava karanlık kenar. */
+      #vignette {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(
+          ellipse at 50% 45%,
+          transparent 50%,
+          rgba(0, 0, 0, 0.62) 100%
+        );
+        z-index: 1;
+      }
+
+      .panel {
+        position: fixed;
+        z-index: 3;
+        background: var(--glass);
+        backdrop-filter: blur(14px) saturate(1.2);
+        -webkit-backdrop-filter: blur(14px) saturate(1.2);
+        border: 1px solid var(--hairline);
+        border-radius: 16px;
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      }
+
+      #hud {
+        top: 18px;
+        left: 18px;
+        width: 430px;
+        padding: 16px 16px 18px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .brand-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 14px 2px rgba(34, 211, 238, 0.7);
+      }
+      .brand-title {
+        font-size: 13px;
+        font-weight: 650;
+        letter-spacing: 0.06em;
+      }
+      .brand-sub {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .panel-label {
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin: 4px 0 8px;
+      }
+
+      pre#report {
+        margin: 0;
+        padding: 11px 12px;
+        min-height: 92px;
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        background: rgba(5, 7, 12, 0.55);
+        font-family: var(--mono);
+        font-size: 11.5px;
+        line-height: 1.62;
+        color: var(--cyan);
+        white-space: pre;
+        overflow-x: auto;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 12px 0 0;
+      }
+      .stat {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        padding: 7px 9px;
+      }
+      .stat-k {
+        display: block;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .stat-v {
+        display: block;
+        font-family: var(--mono);
+        font-size: 15px;
+        font-weight: 600;
+        margin-top: 3px;
+        color: var(--violet);
+      }
+
+      .note {
+        margin-top: 10px;
+        font-size: 11px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      .note b {
+        color: var(--magenta);
+        font-weight: 600;
+      }
+
+      #controls {
+        position: fixed;
+        z-index: 3;
+        bottom: 22px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 16px;
+        background: var(--glass);
+        backdrop-filter: blur(14px) saturate(1.2);
+        -webkit-backdrop-filter: blur(14px) saturate(1.2);
+        border: 1px solid var(--hairline);
+        border-radius: 999px;
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.45),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      kbd {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 7px;
+        padding: 3px 8px;
+        min-width: 22px;
+        text-align: center;
+      }
+      .pill-sep {
+        letter-spacing: 0.06em;
+        font-size: 10px;
+        margin: 0 6px 0 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+    <div id="vignette"></div>
+
+    <section id="hud" class="panel">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <div>
+          <div class="brand-title">-COMPAT YOLU · @dimforge/rapier3d-compat</div>
+          <div class="brand-sub">eklenti yok · 3× esnext · await RAPIER.init()</div>
+        </div>
+      </div>
+
+      <div class="panel-label">KURULUM DENETİMİ</div>
+      <pre id="report">RAPIER      ölçülüyor…</pre>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-k">FPS</span>
+          <span id="stat-fps" class="stat-v">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-k">PAKET</span>
+          <span id="stat-paket" class="stat-v">COMPAT</span>
+        </div>
+        <div class="stat">
+          <span class="stat-k">DENETİM</span>
+          <span id="stat-durum" class="stat-v">ÖLÇÜLÜYOR</span>
+        </div>
+      </div>
+
+      <p class="note">
+        DevTools → Network → filtre <b>wasm</b>: liste <b>BOŞ</b>. Motor base64
+        olarak JS bundle'ın içinde geliyor; ayrı istek yok, ayrı önbellek yok.
+        Saf ESM yolu için <code>npm run dev</code>.
+      </p>
+    </section>
+
+    <div id="controls">
+      <kbd>R</kbd>
+      <span class="pill-sep">yeniden düşür</span>
+      <kbd>A</kbd>
+      <span class="pill-sep">denetimi yeniden ölç</span>
+    </div>
+
+    <script type="module" src="/src/main-compat.ts"></script>
+  </body>
+</html>

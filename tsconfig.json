@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    // ZORUNLU: @dimforge/rapier3d'nin "exports" alanı yok. "node16" ile
+    // tip çözümlemesi kırılır; "bundler" paketin "module"/"types" alanını okur.
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "types": ["vite/client", "node"]
+  },
+  "include": [
+    "src",
+    "tests",
+    "size",
+    "vite.config.ts",
+    "vite.config.compat.ts",
+    "vite.config.tla.ts",
+    "vite.config.inline-trap.ts",
+    "vitest.config.ts"
+  ]
+}
