@@ -1,8 +1,8 @@
-// npm run size — makaledeki bayt tablosunu bu makinede yeniden üretir.
+// npm run size — reproduces the byte size table locally.
 //
-// Dört varyantı da GERÇEKTEN build eder. Giriş dosyası bilerek "boş uygulama"
-// (size/esm.ts, size/compat.ts): three.js sahnesi katılsaydı JS sütunu ikisinde
-// de aynı miktarda büyürdü, fark sabit kalırdı — o yüzden ölçüm bunun dışında.
+// ACTUALLY builds all four variants. Entry file is intentionally an "empty app"
+// (size/esm.ts, size/compat.ts): if three.js scene were added, JS column would grow
+// by the same amount in both, preserving the difference.
 import { build } from "vite";
 import { readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -21,25 +21,25 @@ const VARIANTS = [
   {
     id: "esm-tla",
     label:
-      "`rapier3d` + `vite-plugin-wasm` + `vite-plugin-top-level-await` (varsayılan hedef)",
+      "`rapier3d` + `vite-plugin-wasm` + `vite-plugin-top-level-await` (default target)",
     configFile: "vite.config.tla.ts",
     input: "size/esm.html",
   },
   {
     id: "compat",
-    label: '`rapier3d-compat`, sıfır eklenti, `target: "esnext"`',
+    label: '`rapier3d-compat`, zero plugins, `target: "esnext"`',
     configFile: "vite.config.compat.ts",
     input: "size/compat.html",
   },
   {
     id: "inline-trap",
-    label: "TUZAK: aynı ESM kurulumu + `assetsInlineLimit: 2_000_000`",
+    label: "TRAP: same ESM setup + `assetsInlineLimit: 2_000_000`",
     configFile: "vite.config.inline-trap.ts",
     input: "size/esm.html",
   },
 ];
 
-const fmt = (n) => (n === 0 ? "—" : n.toLocaleString("tr-TR") + " B");
+const fmt = (n) => (n === 0 ? "—" : n.toLocaleString("en-US") + " B");
 
 function walk(dir) {
   const out = [];
@@ -55,8 +55,7 @@ async function measure(variant) {
   const outDir = join(OUT, variant.id);
   rmSync(join(ROOT, outDir), { recursive: true, force: true });
 
-  // configFile + inline override: gerçek konfigürasyon dosyaları ölçülüyor,
-  // burada kopyalanmıyor. Tek değişen giriş dosyası ve çıktı klasörü.
+  // configFile + inline override: measures real config files directly.
   await build({
     root: ROOT,
     configFile: join(ROOT, variant.configFile),
@@ -85,7 +84,7 @@ async function measure(variant) {
 const rows = [];
 for (const variant of VARIANTS) rows.push(await measure(variant));
 
-console.log("\n| Kurulum | `dist/` JS | `dist/` .wasm | Toplam | gzip -9 |");
+console.log("\n| Setup | `dist/` JS | `dist/` .wasm | Total | gzip -9 |");
 console.log("|---|---|---|---|---|");
 for (const r of rows) {
   console.log(
@@ -96,10 +95,10 @@ for (const r of rows) {
 const esm = rows.find((r) => r.id === "esm");
 const compat = rows.find((r) => r.id === "compat");
 const trap = rows.find((r) => r.id === "inline-trap");
-const pct = (a, b) => "%" + (((a - b) / b) * 100).toFixed(1).replace(".", ",");
+const pct = (a, b) => (((a - b) / b) * 100).toFixed(1) + "%";
 
-console.log("\nham fark (compat − ESM) :", fmt(compat.total - esm.total), "→", pct(compat.total, esm.total));
-console.log("gzip fark               :", fmt(compat.gzip - esm.gzip), "→", pct(compat.gzip, esm.gzip));
-console.log("tuzak − compat          :", fmt(trap.total - compat.total), "(tuzak compat'tan BÜYÜK)");
-console.log("tuzakta .wasm dosyası   :", trap.wasm === 0 ? "YOK (inline edildi)" : fmt(trap.wasm));
-console.log("TLA eklentisinin bedeli :", fmt(rows.find((r) => r.id === "esm-tla").js - esm.js), "JS");
+console.log("\nraw difference (compat − ESM) :", fmt(compat.total - esm.total), "→", pct(compat.total, esm.total));
+console.log("gzip difference               :", fmt(compat.gzip - esm.gzip), "→", pct(compat.gzip, esm.gzip));
+console.log("trap − compat                 :", fmt(trap.total - compat.total), "(trap is LARGER than compat)");
+console.log(".wasm file in trap            :", trap.wasm === 0 ? "NONE (inlined)" : fmt(trap.wasm));
+console.log("cost of TLA plugin            :", fmt(rows.find((r) => r.id === "esm-tla").js - esm.js), "JS");

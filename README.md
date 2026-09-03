@@ -1,254 +1,263 @@
-# Rapier + Vite + Three.js Kurulumu — Saf ESM vs `-compat`, Ölçülmüş
+# Rapier + Vite + Three.js Setup — Pure ESM vs `-compat`, Measured
 
-"Yedi Karakterlik Fark, 484 Kilobayt" makalesinin çalışan kodu. Konu tek bir doğru
-konfigürasyon değil, **iki kurulum yolunun karşılaştırması** — bu yüzden proje
-bilerek dört build varyantı üretiyor:
+Working code for the article "A Seven-Character Difference, 484 Kilobytes". The
+subject is not one correct configuration but **a comparison of two setup paths** —
+which is why this project deliberately produces four build variants:
 
-| Varyant | Paket | Eklenti | Ne kanıtlıyor |
+| Variant | Package | Plugin | What it proves |
 |---|---|---|---|
-| `build:esm` | `@dimforge/rapier3d` | `vite-plugin-wasm`, `target: "esnext"` | ayrı `.wasm` asset'i, `init()` YOK |
-| `build:tla` | `@dimforge/rapier3d` | `[wasm(), topLevelAwait()]`, varsayılan hedef | TLA eklentisinin bedeli (+73.429 B JS) |
-| `build:compat` | `@dimforge/rapier3d-compat` | eklenti YOK, 3× `esnext` | `await RAPIER.init()`, tek JS dosyası |
-| `build:inline-trap` | `@dimforge/rapier3d` | `assetsInlineLimit: 2_000_000` | tuzak: `.wasm` base64'e gömülür |
+| `build:esm` | `@dimforge/rapier3d` | `vite-plugin-wasm`, `target: "esnext"` | separate `.wasm` asset, NO `init()` |
+| `build:tla` | `@dimforge/rapier3d` | `[wasm(), topLevelAwait()]`, default target | the cost of the TLA plugin (+73,429 B JS) |
+| `build:compat` | `@dimforge/rapier3d-compat` | NO plugin, 3× `esnext` | `await RAPIER.init()`, a single JS file |
+| `build:inline-trap` | `@dimforge/rapier3d` | `assetsInlineLimit: 2_000_000` | trap: `.wasm` gets embedded as base64 |
 
-İki Rapier paketi de kurulu. Sebebi yazının tezi: aynı `src/sim.ts` her ikisiyle de
-koşuyor ve testler ikisinin **bit-bit aynı** sonucu verdiğini kanıtlıyor.
+Both Rapier packages are installed. The reason is the article's thesis: the same
+`src/sim.ts` runs with both, and the tests prove the two produce **bit-for-bit
+identical** results.
 
-## Sürümler (pinli — tercih değil, zorunluluk)
+## Versions (pinned — not a preference, a requirement)
 
-- `@dimforge/rapier3d@0.19.3` + `@dimforge/rapier3d-compat@0.19.3`. Rapier'ın Rust
-  çekirdeği çok daha ilerideyken npm paketi aylardır 0.19.3'te sabit.
-- `three@0.185.1` + `@types/three`. Gölge `PCFShadowMap` (r185'te `PCFSoftShadowMap`
-  deprecate edildi).
-- Vite 6.4.3 + TypeScript + Vitest, paket yöneticisi npm.
-- `tsconfig.json`'da **`"moduleResolution": "bundler"` zorunlu**: saf ESM paketinin
-  `exports` alanı yok, `node16` ile tip çözümlemesi kırılır.
+- `@dimforge/rapier3d@0.19.3` + `@dimforge/rapier3d-compat@0.19.3`. While Rapier's
+  Rust core is far ahead, the npm package has been stuck at 0.19.3 for months.
+- `three@0.185.1` + `@types/three`. Shadows use `PCFShadowMap` (`PCFSoftShadowMap`
+  was deprecated in r185).
+- Vite 6.4.3 + TypeScript + Vitest, package manager npm.
+- **`"moduleResolution": "bundler"` is mandatory** in `tsconfig.json`: the pure ESM
+  package has no `exports` field, and type resolution breaks under `node16`.
 
-## Kurulum
+## Install
 
 ```bash
 npm install
 ```
 
-## Test (çekirdek kanıt — tarayıcı gerekmez)
+## Test (the core proof — no browser needed)
 
 ```bash
 npm test
 ```
 
-17 test yeşil olmalı:
+17 tests must be green:
 
-| Dosya | Test | Ne kanıtlıyor |
+| File | Tests | What it proves |
 |---|---|---|
-| `tests/determinism.test.ts` | 6 | `version()` `"0.19.3"` · saf ESM'de `init` **undefined**, `-compat`'ta **function** · aynı paket iki koşu → `toEqual` ile bit-bit aynı `y` dizisi · iki paket aynı motoru çalıştırıyor (`y = 0.49872392416000366`) · `timestep = 1/120` dünyayı yarı yolda tutuyor · `w.timestep = 1/60` geri okunduğunda `!== 1/60` ama `toBeCloseTo(1/60, 7)` |
-| `tests/stepper.test.ts` | 4 | tam `dt` → 1 adım · yarım `dt` → 0, ikinci yarım → 1 · 8 saniyelik kare `maxStepsPerFrame`'de duruyor (5) · `alpha` çeyrek adımda `0.25` |
-| `tests/hud.test.ts` | 2 | demonun bastığı beş HUD satırı makaledeki blokla **birebir** aynı · `-compat`'ta üçüncü satır `✗` |
-| `tests/wasm-bytes.test.ts` | 5 | `measureWasmBytes` dev'deki ÜÇ `.wasm` URL'si arasından sorgu-suz **gerçek ikiliyi** seçiyor (`?import` sarmalayıcısını değil) · build'deki hash'li asset adını tanıyor · `-compat` yolunda 0 · `encodedBodySize` yoksa `transferSize`'a düşüyor |
+| `tests/determinism.test.ts` | 6 | `version()` is `"0.19.3"` · in pure ESM `init` is **undefined**, in `-compat` a **function** · two runs of the same package → bit-for-bit identical `y` array via `toEqual` · both packages run the same engine (`y = 0.49872392416000366`) · `timestep = 1/120` leaves the world halfway · `w.timestep = 1/60` read back is `!== 1/60` but `toBeCloseTo(1/60, 7)` |
+| `tests/stepper.test.ts` | 4 | a full `dt` → 1 step · half a `dt` → 0, the second half → 1 · an 8-second frame stops at `maxStepsPerFrame` (5) · `alpha` is `0.25` a quarter into a step |
+| `tests/hud.test.ts` | 2 | the five HUD lines the demo prints match the block in the article **exactly** · in `-compat` the third line is `✗` |
+| `tests/wasm-bytes.test.ts` | 5 | `measureWasmBytes` picks the **real binary** — the one without a query string — out of the THREE `.wasm` URLs in dev (not the `?import` wrapper) · recognizes the hashed asset name in a build · 0 on the `-compat` track · falls back to `transferSize` when `encodedBodySize` is missing |
 
-Vitest'in saf ESM paketini çözebilmesi için `vitest.config.ts`'de **`test.alias`
-zorunlu**. `test.server.deps.inline` tek başına YETMİYOR — ikisi de
-`npm run errors` çıktısında yan yana duruyor.
+For Vitest to resolve the pure ESM package, **`test.alias` in `vitest.config.ts` is
+mandatory**. `test.server.deps.inline` alone is NOT ENOUGH — both sit side by side
+in the `npm run errors` output.
 
-## Ölçümler (makaledeki bütün sayılar)
+## Measurements (every number in the article)
 
-Hepsi elle tetiklenir; arka planda koşan hiçbir şey yok.
+All of them are triggered by hand; nothing runs in the background.
 
 ```bash
-npm run inspect        # -compat'ın bundle'ı içindeki base64 bloğu
-npm run size           # dört varyantı build edip bayt tablosunu basar
-npm run cache-proof    # tek satır değiştir → hangi dosya yeniden iniyor
-npm run errors         # üç kurulum hatasını gerçekten üretir
-npm run dev-proof      # dev ile build'in farkı: dep optimizer + ?url sarmalayıcı
-npm run bootstrap-async # TLA'nın üçüncü çözümü gerçekten koşuyor mu
+npm run inspect        # the base64 blob inside -compat's bundle
+npm run size           # builds all four variants and prints the byte table
+npm run cache-proof    # change one line → which file gets redownloaded
+npm run errors         # actually reproduces the three setup errors
+npm run dev-proof      # dev vs build: dep optimizer + ?url wrapper
+npm run bootstrap-async # does TLA's third solution really run
 ```
 
-`npm run bootstrap-async` → `y = 0.49872392416000366`. Aynı sayı `auditSetup()`,
-`tests/determinism.test.ts` ve HUD'da da çıkıyor — üç ayrı yol, tek değer.
+`npm run bootstrap-async` → `y = 0.49872392416000366`. The same number shows up in
+`auditSetup()`, `tests/determinism.test.ts` and the HUD — three separate paths, one
+value.
 
 ### `npm run inspect`
 
 ```
-rapier.mjs      : 2.238.719 karakter
-base64 blok     : 2.092.784 karakter
-çözülmüş wasm   : 1.569.588 bayt
-base64 vergisi  : %33.3
+rapier.mjs      : 2,238,719 characters
+base64 blob     : 2,092,784 characters
+decoded wasm    : 1,569,588 bytes
+base64 overhead : %33.3
 ```
 
 ### `npm run size`
 
-Giriş dosyası bilerek "boş uygulama" (`size/esm.ts`, `size/compat.ts`): three.js
-sahnesi katılsa JS sütunu ikisinde de aynı miktarda büyür, fark sabit kalır.
+The entry file is deliberately an "empty app" (`size/esm.ts`, `size/compat.ts`): if
+a three.js scene were added, the JS column would grow by the same amount in both
+and the difference would stay constant.
 
 ```
-| Kurulum | dist/ JS | dist/ .wasm | Toplam | gzip -9 |
-| rapier3d + vite-plugin-wasm, target: "esnext"        |   182.074 B | 1.570.176 B | 1.752.250 B | 616.973 B |
-| ... + vite-plugin-top-level-await (varsayılan hedef)  |   255.503 B | 1.570.176 B | 1.825.679 B | 621.138 B |
-| rapier3d-compat, sıfır eklenti, target: "esnext"      | 2.236.245 B |           — | 2.236.245 B | 829.447 B |
-| TUZAK: aynı ESM kurulumu + assetsInlineLimit: 2e6     | 2.275.633 B |           — | 2.275.633 B | 834.017 B |
+| Setup | dist/ JS | dist/ .wasm | Total | gzip -9 |
+| rapier3d + vite-plugin-wasm, target: "esnext"        |   182,074 B | 1,570,176 B | 1,752,250 B | 616,973 B |
+| ... + vite-plugin-top-level-await (default target)    |   255,503 B | 1,570,176 B | 1,825,679 B | 621,138 B |
+| rapier3d-compat, zero plugins, target: "esnext"       | 2,236,245 B |           — | 2,236,245 B | 829,447 B |
+| TRAP: same ESM setup + assetsInlineLimit: 2e6         | 2,275,633 B |           — | 2,275,633 B | 834,017 B |
 
-ham fark (compat − ESM) : 483.995 B → %27,6
-gzip fark               : 212.474 B → %34,4
-tuzak − compat          : 39.388 B (tuzak compat'tan BÜYÜK)
-tuzakta .wasm dosyası   : YOK (inline edildi)
-TLA eklentisinin bedeli : 73.429 B JS
+raw difference (compat − ESM) : 483,995 B → 27.6%
+gzip difference               : 212,474 B → 34.4%
+trap − compat                 : 39,388 B (trap is LARGER than compat)
+.wasm file in trap            : NONE (inlined)
+cost of TLA plugin            : 73,429 B JS
 ```
 
-Aynı fark three.js'li gerçek demoda da sabit kalıyor: `dist/` 700.879 + 1.570.176 =
-2.271.055 B, `dist-compat/` 2.755.032 B tek dosya → **483.977 B**. Yani three.js'i
-sahneye katmak JS sütununu ikisinde de aynı miktarda büyütüyor; fark sabit.
+The same difference stays constant in the real demo with three.js too: `dist/` is
+700,879 + 1,570,176 = 2,271,055 B, `dist-compat/` is a single 2,755,032 B file →
+**483,977 B**. Adding three.js to the scene grows the JS column by the same amount
+on both sides; the difference is constant.
 
 ### `npm run cache-proof`
 
 ```
-# saf ESM yolu
-önce : esm-DeOAV6VB.js  (182.074 B)
-sonra: esm-Mwh65gap.js  (182.094 B)
-wasm : rapier_wasm3d_bg-bb0TTxsO.wasm  (1.570.176 B)
-       DEĞİŞMEDİ → önbellekten gelir
+# pure ESM track
+before: esm-DeOAV6VB.js  (182,074 B)
+after : esm-Mwh65gap.js  (182,094 B)
+wasm  : rapier_wasm3d_bg-bb0TTxsO.wasm  (1,570,176 B)
+        UNCHANGED -> served from cache
 
-# -compat yolu
-önce : compat-DtTIk6Xs.js  (2.236.245 B)
-sonra: compat-CYxT40n-.js  (2.236.265 B)
-wasm : YOK — motor JS'in içinde, bundle'la birlikte yeniden iner
+# -compat track
+before: compat-DtTIk6Xs.js  (2,236,245 B)
+after : compat-CYxT40n-.js  (2,236,265 B)
+wasm  : NONE — engine is inside JS, redownloaded along with bundle
 ```
 
-Script eklediği satırı (`document.title = "v2";`) **geri alır** — çalışma ağacını
-kirli bırakmaz.
+The script **reverts** the line it added (`document.title = "v2";`) — it does not
+leave the working tree dirty.
 
 ### `npm run errors`
 
-Üç patlama sırayla: `[vite:wasm-fallback] ... "ESM integration proposal for Wasm" is
-not supported currently` → `[vite:esbuild-transpile] ... Top-level await is not
-available in the configured target environment` → `Failed to resolve entry for
-package "@dimforge/rapier3d"`. Dördüncü blok `server.deps.inline`'ın yetmediğini
-gösteriyor. Beklenen hatalardan biri çıkmazsa script sıfır olmayan kodla düşer.
+Three explosions in order: `[vite:wasm-fallback] ... "ESM integration proposal for
+Wasm" is not supported currently` → `[vite:esbuild-transpile] ... Top-level await is
+not available in the configured target environment` → `Failed to resolve entry for
+package "@dimforge/rapier3d"`. The fourth block shows that `server.deps.inline` is
+not enough. If any of the expected errors fails to appear, the script exits with a
+non-zero code.
 
 ### `npm run dev-proof`
 
 ```
-# 1) optimizeDeps.exclude YOK — dep optimizer devrede
-node_modules/.vite/deps/@dimforge_rapier3d.js   2.598.784 bayt
-  └─ içinde 2.093.568 karakterlik base64 blok
-  → dev'de ayrı .wasm isteği YOK: motor JS'in içinde.
+# 1) WITHOUT optimizeDeps.exclude — dep optimizer active
+node_modules/.vite/deps/@dimforge_rapier3d.js   2,598,784 bytes
+  └─ contains 2,093,568 char base64 blob
+  → separate .wasm request in dev: NO: engine inside JS.
 
-# 2) optimizeDeps.exclude VAR — sarmalayıcının ilk satırları
+# 2) WITH optimizeDeps.exclude — wrapper header lines
 import __vite__wasmUrl from "/node_modules/@dimforge/rapier3d/rapier_wasm3d_bg.wasm?import&url"
 import __vite__initWasm from "/__vite-plugin-wasm-helper"
 const __vite__wasmModule = await __vite__initWasm({ ... });
 
-  → ?import&url VAR · top-level await VAR
+  → ?import&url YES · top-level await YES
 ```
 
-## Çalıştırma (görsel demo)
+## Running it (visual demo)
 
 ```bash
-npm run dev           # saf ESM yolu   → http://localhost:5173/
-npm run dev:compat    # -compat yolu   → http://localhost:5173/compat.html
+npm run dev           # pure ESM track   → http://localhost:5173/
+npm run dev:compat    # -compat track    → http://localhost:5173/compat.html
 ```
 
-**`file://` ile AÇMA.** Ne ES modülleri ne WASM o protokolde yüklenir; boş ekran
-görürsün. Demo Vite dev sunucusu ister.
+**DO NOT open it with `file://`.** Neither ES modules nor WASM load over that
+protocol; you will get a blank screen. The demo needs the Vite dev server.
 
-### Tuşlar
+### Keys
 
-| Tuş | İş |
+| Key | Action |
 |---|---|
-| `R` | kutuları yeniden düşür (başlangıç transformları, sıfır hız) |
-| `A` | kurulum denetimini yeniden ölç (`auditSetup`, 2×120 adım, `setTimeout(fn, 0)` ile ilk kareden sonraya atılır) |
+| `R` | drop the boxes again (initial transforms, zero velocity) |
+| `A` | re-measure the setup audit (`auditSetup`, 2×120 steps, pushed past the first frame with `setTimeout(fn, 0)`) |
 
-Otomatik süpürme, sonsuz spawn, arka planda koşan ölçüm YOK. 24 gövde + zemin,
-tek 1024 gölge haritası, post-process zinciri yok — fanı çalıştırmaz.
+No automatic sweeping, no endless spawning, no measurement running in the
+background. 24 bodies + ground, a single 1024 shadow map, no post-processing chain —
+it will not spin up your fan.
 
-### Beklenen çıktı
+### Expected output
 
-Sunum "dark cinematic + neon": ACES tone mapping, `PCFShadowMap` gölgeler, emissive
-neon şeritler, CSS vignette. Bloom yok.
+The presentation is "dark cinematic + neon": ACES tone mapping, `PCFShadowMap`
+shadows, emissive neon strips, a CSS vignette. No bloom.
 
-Sol üstteki cam panelde beş satırlık kurulum denetimi var (`tests/hud.test.ts` bu
-satırları birebir doğruluyor):
+The glass panel in the top left holds the five-line setup audit (`tests/hud.test.ts`
+verifies these lines exactly):
 
 ```
-RAPIER      0.19.3
-wasm sınırı ✓  (timestep 0.01666666753590107)
-ayrı .wasm  ✓  (1.570.176 B, application/wasm)
-determinizm ✓  (y = 0.49872392416000366)
-gövde       24 · collider 25 · adım/kare 1
+RAPIER        0.19.3
+wasm boundary ✓  (timestep 0.01666666753590107)
+separate wasm ✓  (1,570,176 B, application/wasm)
+determinism   ✓  (y = 0.49872392416000366)
+bodies        24 · collider 25 · steps/frame 1
 ```
 
-Doğrulama koşulu: **DevTools → Network → filtre `wasm`.**
+The verification condition: **DevTools → Network → filter `wasm`.**
 
-- `npm run dev` → tek satır, `application/wasm`, `Content-Length: 1570176`.
-- `npm run dev:compat` → liste **boş**, HUD'un üçüncü satırı `✗`.
+- `npm run dev` → a single row, `application/wasm`, `Content-Length: 1570176`.
+- `npm run dev:compat` → the list is **empty**, the HUD's third line is `✗`.
 
-İkisi arasındaki fark bu yazının bütün tezi.
+The difference between those two is this article's entire thesis.
 
 ## Build
 
 ```bash
-npm run build            # = build:esm → dist/            (.wasm ayrı dosya OLMALI)
-npm run build:compat     # → dist-compat/                 (tek JS, .wasm yok)
+npm run build            # = build:esm → dist/            (.wasm MUST be a separate file)
+npm run build:compat     # → dist-compat/                 (single JS, no .wasm)
 npm run build:tla        # → dist-tla/
-npm run build:inline-trap # → dist-inline-trap/           (tuzak: .wasm YOK)
-npm run preview          # dist/ önizleme
-npm run preview:compat   # dist-compat/ önizleme
+npm run build:inline-trap # → dist-inline-trap/           (trap: NO .wasm)
+npm run preview          # preview dist/
+npm run preview:compat   # preview dist-compat/
 ```
 
-`dist/` içinde `.wasm` uzantılı bir dosya YOKSA `assetsInlineLimit` tuzağına
-düşülmüş demektir.
+If there is NO file with a `.wasm` extension inside `dist/`, you have fallen into
+the `assetsInlineLimit` trap.
 
-## Dosya yapısı
+## File structure
 
 ```
 src/
-  sim.ts              # ÇEKİRDEK: RapierApi tipi + createSim(R, count) — rastgelelik YOK
-  sync.ts             # ÇEKİRDEK: Rapier transform → THREE.Object3D (quaternion, Euler YOK)
-  stepper.ts          # ÇEKİRDEK: FixedStepper (accumulator + maxStepsPerFrame + alpha)
-  checklist.ts        # ÇEKİRDEK: auditSetup(R) → SetupReport (4 ölçülebilir soru)
-  scene.ts            # sunum: renderer, PCFShadowMap, neon şeritler, ışıklar
-  view/hud.ts         # sunum: hudLines() saf fonksiyon + DOM bağlama
-  view/controls.ts    # sunum: R = yeniden düşür
-  main.ts             # demo girişi — saf ESM (init() YOK)
-  main-compat.ts      # demo girişi — -compat (await RAPIER.init())
-  bootstrap-async.ts  # TLA'nın üçüncü çözümü: async bootstrap (yalnız -compat'ta geçerli)
+  sim.ts              # CORE: RapierApi type + createSim(R, count) — NO randomness
+  sync.ts             # CORE: Rapier transform → THREE.Object3D (quaternion, NO Euler)
+  stepper.ts          # CORE: FixedStepper (accumulator + maxStepsPerFrame + alpha)
+  checklist.ts        # CORE: auditSetup(R) → SetupReport (4 measurable questions)
+  scene.ts            # presentation: renderer, PCFShadowMap, neon strips, lights
+  view/hud.ts         # presentation: hudLines() pure function + DOM binding
+  view/controls.ts    # presentation: R = drop again
+  main.ts             # demo entry — pure ESM (NO init())
+  main-compat.ts      # demo entry — -compat (await RAPIER.init())
+  bootstrap-async.ts  # TLA's third solution: async bootstrap (only valid on -compat)
 size/
-  esm.ts / esm.html         # ölçüm girişi: sadece Rapier, three.js yok
-  compat.ts / compat.html   # aynısının -compat ikizi
+  esm.ts / esm.html         # measurement entry: Rapier only, no three.js
+  compat.ts / compat.html   # the -compat twin of the same
 scripts/
-  inspect-compat.mjs      # base64 bloğu ve vergisi
-  measure-size.mjs        # dört varyantı build edip bayt tablosu
-  cache-proof.mjs         # önbellek kanıtı (tek satır değiştir → geri al)
-  reproduce-errors.mjs    # üç hatanın tam metni
+  inspect-compat.mjs      # the base64 blob and its overhead
+  measure-size.mjs        # builds four variants and prints the byte table
+  cache-proof.mjs         # cache proof (change one line → revert it)
+  reproduce-errors.mjs    # the full text of the three errors
   dev-optimizer-proof.mjs # dev ≠ build
 tests/
   determinism.test.ts · stepper.test.ts · hud.test.ts
 vite.config.ts · vite.config.tla.ts · vite.config.inline-trap.ts · vite.config.compat.ts
-vitest.config.ts          # test.alias — saf ESM paketi için ZORUNLU
+vitest.config.ts          # test.alias — MANDATORY for the pure ESM package
 ```
 
-`src/scene.ts`, `src/view/*` ve iki `main*.ts` dışındaki her şey DOM'suz: testler
-node altında koşar.
+Everything except `src/scene.ts`, `src/view/*` and the two `main*.ts` files is
+DOM-free: the tests run under node.
 
-## Alınan dersler (makalede de anlatılır)
+## Lessons learned (also told in the article)
 
-- Saf ESM paketinde `RAPIER.init` **yok**: `init.js` = `export {};`. `-compat` için
-  yazılmış her eğitim materyali burada duvara çarpar.
-- Saf paketin `package.json`'ında `main`/`exports` yok, sadece `module` var. Tarayıcı
-  build'i çalışır (rollup `module`'ü okur), Node çözümlemesi çalışmaz → vitest patlar.
-  Çözüm `test.alias`; `server.deps.inline` yetmiyor.
-- `vite-plugin-wasm`'ın ürettiği top-level await **senin kodunda değil**. Bu yüzden
-  "await'i async fonksiyona al" çözümü saf ESM yolunda işe yaramaz.
-- Eklenti sırası `[wasm(), topLevelAwait()]`; tersi sessizce çalışmaz.
-- `optimizeDeps.exclude` koymazsan dev'de WASM base64 olarak dep bundle'a gömülür:
-  dev'de fiilen `-compat` davranışı alırsın, `dist/`'te başka bir şey görürsün.
-- `assetsInlineLimit` `.wasm`'ın boyutunu geçerse bütün kazanç uçar — hatta
-  `-compat`'tan 39.388 bayt büyük tek bir dosya elde edersin.
-- Base64 vergisi matematik: 3 bayt → 4 karakter, tam %33,3. Gzip bunu silmiyor,
-  oransal olarak büyütüyor (%27,6 → %34,4).
-- İki paketin gömülü/ayrı WASM'ı 588 bayt farklı (1.569.588 vs 1.570.176):
-  `wasm-bindgen`'in `bundler` ve `web` hedefleri farklı sarmalayıcı üretiyor.
-- Fizik adımını render karesinden ayır: `FixedStepper` + `maxStepsPerFrame` freni.
-- `cuboid(hx, hy, hz)` YARIM boyut alır; `0.4` → `0.8` birimlik küp.
+- The pure ESM package has **no** `RAPIER.init`: `init.js` is `export {};`. Every
+  tutorial written for `-compat` hits a wall here.
+- The pure package's `package.json` has no `main`/`exports`, only `module`. The
+  browser build works (rollup reads `module`), Node resolution does not → vitest
+  blows up. The fix is `test.alias`; `server.deps.inline` is not enough.
+- The top-level await that `vite-plugin-wasm` produces is **not in your code**. That
+  is why the "wrap the await in an async function" fix does not work on the pure ESM
+  track.
+- The plugin order is `[wasm(), topLevelAwait()]`; the reverse silently fails.
+- If you do not add `optimizeDeps.exclude`, WASM gets embedded into the dep bundle as
+  base64 in dev: you effectively get `-compat` behavior in dev while seeing something
+  else in `dist/`.
+- If `assetsInlineLimit` exceeds the size of the `.wasm`, the entire gain evaporates —
+  you end up with a single file 39,388 bytes LARGER than `-compat`.
+- The base64 overhead is plain math: 3 bytes → 4 characters, exactly 33.3%. Gzip does
+  not erase it, it magnifies it proportionally (27.6% → 34.4%).
+- The embedded/separate WASM of the two packages differs by 588 bytes (1,569,588 vs
+  1,570,176): `wasm-bindgen`'s `bundler` and `web` targets emit different wrappers.
+- Decouple the physics step from the render frame: `FixedStepper` plus the
+  `maxStepsPerFrame` brake.
+- `cuboid(hx, hy, hz)` takes HALF extents; `0.4` gives you a `0.8`-unit cube.
 
-## Lisans
+## License
 
-MIT — bkz. `LICENSE`.
+MIT — see `LICENSE`.

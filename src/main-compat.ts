@@ -7,13 +7,13 @@ import { buildScene } from "./scene";
 import { createHud } from "./view/hud";
 import { bindControls } from "./view/controls";
 
-// WASM base64 olarak paketin içinde; init() onu çözüp motoru ayağa kaldırır.
-// Bunu atlarsan World/collider çağrıları "not initialized" ile patlar.
-// Bu satır senin kodunda bir top-level await — üç yerde esnext bu yüzden.
+// WASM is inside the package as base64; init() decodes it and boots the engine.
+// Skipping this causes World/collider calls to fail with 'not initialized'.
+// This line is a top-level await in your code — which is why esnext is needed in 3 places.
 await RAPIER.init();
 
 const { scene, camera, renderer } = buildScene();
-// Bu noktadan sonra API saf ESM'dekiyle bire bir aynı: tek fark yukarıdaki init.
+// Beyond this point the API is identical to pure ESM: sole difference is the init above.
 const { world, bodies } = createSim(RAPIER as unknown as RapierApi, 24);
 
 const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);

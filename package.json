@@ -1,7 +1,7 @@
 {
   "name": "rapier-vite-threejs-setup",
   "version": "1.0.0",
-  "description": "Vite + Three.js projesinde Rapier kurulumu: saf ESM (@dimforge/rapier3d + vite-plugin-wasm) ile -compat yolunu yan yana kuran, üç kurulum hatasını gerçekten üreten ve bayt/önbellek farkını ölçen çalışan proje",
+  "description": "Setting up Rapier physics in a modern Vite and Three.js application: asynchronous WebAssembly initialization, top-level await bundling, and debug wireframe rendering.",
   "type": "module",
   "license": "MIT",
   "scripts": {

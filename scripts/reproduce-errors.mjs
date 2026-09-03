@@ -1,7 +1,7 @@
-// npm run errors — makaledeki üç hata metninin KAYNAĞI.
+// npm run errors — source of the three build errors.
 //
-// Üç patlamayı da gerçekten üretir ve tam metnini basar. Beklenen hata
-// çıkmazsa script sıfır olmayan kodla düşer: sessizce geçmesin.
+// Reproduces all three errors and logs full text.
+// If expected error doesn't trigger, script exits with non-zero code.
 import { build } from "vite";
 import wasm from "vite-plugin-wasm";
 import { execFileSync } from "node:child_process";
@@ -16,10 +16,10 @@ function show(no, title, needle, text) {
   const ok = text.includes(needle);
   results.push({ no, title, ok, needle });
   console.log(`\n${"=".repeat(72)}`);
-  console.log(`# ${no}. patlama — ${title}`);
+  console.log(`# ${no}. error case — ${title}`);
   console.log(`${"=".repeat(72)}`);
   console.log(text.trim());
-  console.log(`\n→ beklenen imza ${ok ? "BULUNDU" : "BULUNAMADI"}: ${needle}`);
+  console.log(`\n→ expected signature ${ok ? "FOUND" : "NOT FOUND"}: ${needle}`);
 }
 
 async function expectBuildError(inlineConfig, outDir) {
@@ -36,7 +36,7 @@ async function expectBuildError(inlineConfig, outDir) {
         ...inlineConfig.build,
       },
     });
-    return "(hata çıkmadı — build başarılı oldu)";
+    return "(no error — build succeeded)";
   } catch (error) {
     return String(error.message ?? error);
   } finally {
@@ -44,10 +44,10 @@ async function expectBuildError(inlineConfig, outDir) {
   }
 }
 
-// 1) Eklenti hiç yok: Vite .wasm importunu ne yapacağını bilmiyor.
+// 1) Plugin completely missing: Vite does not know what to do with .wasm import.
 show(
   1,
-  "eklenti yok",
+  "no plugin",
   "is not supported currently",
   await expectBuildError(
     { plugins: [], build: { target: "esnext" } },
@@ -55,16 +55,15 @@ show(
   ),
 );
 
-// 2) wasm() var, build.target varsayılan: eklentinin ürettiği TLA'yı hedef
-//    karşılamıyor. O await senin kodunda değil — bağımlılığın içinde.
+// 2) wasm() present, build.target default: target environment does not support TLA.
 show(
   2,
-  "wasm() takıldı, hedef düşük",
+  "wasm() installed, low target",
   "Top-level await is not available in the configured target environment",
   await expectBuildError({ plugins: [wasm()] }, "dist-errors/low-target"),
 );
 
-// 3) vitest, alias yok: Node çözümlemesi "main"/"exports" arıyor, bulamıyor.
+// 3) vitest, no alias: Node resolution looks for "main"/"exports" and fails.
 function runVitest(label, configBody) {
   const configPath = join(ROOT, `vitest.config.__err.ts`);
   writeFileSync(configPath, configBody);
@@ -81,7 +80,7 @@ function runVitest(label, configBody) {
       ],
       { cwd: ROOT, encoding: "utf8", stdio: "pipe" },
     );
-    return `(${label}: hata çıkmadı — testler geçti)`;
+    return `(${label}: no error — tests passed)`;
   } catch (error) {
     const out = `${error.stdout ?? ""}\n${error.stderr ?? ""}`;
     const line = out
@@ -107,7 +106,7 @@ export default defineConfig({ plugins: [wasm()] });
 const INLINE_ONLY = `import { defineConfig } from "vitest/config";
 import wasm from "vite-plugin-wasm";
 
-// Sık önerilen ama YETMEYEN çözüm.
+// Often suggested but INSUFFICIENT solution.
 export default defineConfig({
   plugins: [wasm()],
   test: { server: { deps: { inline: ["@dimforge/rapier3d"] } } },
@@ -116,16 +115,16 @@ export default defineConfig({
 
 show(
   3,
-  "vitest, alias yok",
+  "vitest, no alias",
   "Failed to resolve entry for package",
-  runVitest("alias yok", NO_ALIAS),
+  runVitest("no alias", NO_ALIAS),
 );
 
 show(
   "3b",
-  "vitest + server.deps.inline (YETMEZ)",
+  "vitest + server.deps.inline (INSUFFICIENT)",
   "Failed to resolve entry for package",
-  runVitest("sadece inline", INLINE_ONLY),
+  runVitest("inline only", INLINE_ONLY),
 );
 
 console.log(`\n${"=".repeat(72)}`);
@@ -135,8 +134,8 @@ for (const r of results) {
 }
 if (missing.length > 0) {
   console.error(
-    `\n${missing.length} beklenen hata üretilemedi — makaledeki hata metinleri güncellenmeli.`,
+    `\n${missing.length} expected errors could not be reproduced.`,
   );
   process.exit(1);
 }
-console.log("\nüç patlamanın (+ inline varyantının) tam metni yukarıda.");
+console.log("\nall error outputs logged above.");

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rapier + Vite + Three.js — saf ESM yolu (@dimforge/rapier3d)</title>
+    <title>Rapier.js WASM Physics Integration in Vite + Three.js</title>
     <style>
       :root {
         --cyan: #22d3ee;
@@ -42,7 +42,7 @@
         height: 100vh;
       }
 
-      /* Sinematik vignette — bloom yok, bedava karanlık kenar. */
+      /* Cinematic vignette — no bloom, free dark border. */
       #vignette {
         position: fixed;
         inset: 0;
@@ -207,13 +207,13 @@
       <div class="brand">
         <span class="brand-dot"></span>
         <div>
-          <div class="brand-title">SAF ESM YOLU · @dimforge/rapier3d</div>
-          <div class="brand-sub">vite-plugin-wasm · target esnext · init() YOK</div>
+          <div class="brand-title">PURE ESM TRACK · @dimforge/rapier3d</div>
+          <div class="brand-sub">vite-plugin-wasm · target esnext · NO init()</div>
         </div>
       </div>
 
-      <div class="panel-label">KURULUM DENETİMİ</div>
-      <pre id="report">RAPIER      ölçülüyor…</pre>
+      <div class="panel-label">SETUP AUDIT</div>
+      <pre id="report">RAPIER        measuring…</pre>
 
       <div class="stats">
         <div class="stat">
@@ -221,27 +221,27 @@
           <span id="stat-fps" class="stat-v">0</span>
         </div>
         <div class="stat">
-          <span class="stat-k">PAKET</span>
+          <span class="stat-k">PACKAGE</span>
           <span id="stat-paket" class="stat-v">ESM</span>
         </div>
         <div class="stat">
-          <span class="stat-k">DENETİM</span>
-          <span id="stat-durum" class="stat-v">ÖLÇÜLÜYOR</span>
+          <span class="stat-k">AUDIT</span>
+          <span id="stat-durum" class="stat-v">MEASURING</span>
         </div>
       </div>
 
       <p class="note">
-        DevTools → Network → filtre <b>wasm</b>: tek satır,
-        <b>application/wasm</b>. Aynı sayfayı <code>npm run dev:compat</code> ile
-        açtığında o liste boş kalır — karşılaştırmanın diğer yarısı.
+        DevTools → Network → filter <b>wasm</b>: single line,
+        <b>application/wasm</b>. When you open the same page with <code>npm run dev:compat</code>
+        that list remains empty — the other half of the comparison.
       </p>
     </section>
 
     <div id="controls">
       <kbd>R</kbd>
-      <span class="pill-sep">yeniden düşür</span>
+      <span class="pill-sep">drop again</span>
       <kbd>A</kbd>
-      <span class="pill-sep">denetimi yeniden ölç</span>
+      <span class="pill-sep">re-run audit</span>
     </div>
 
     <script type="module" src="/src/main.ts"></script>

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rapier + Vite + Three.js — -compat yolu (@dimforge/rapier3d-compat)</title>
+    <title>Rapier + Vite + Three.js — -compat track (@dimforge/rapier3d-compat)</title>
     <style>
       :root {
         --cyan: #22d3ee;
@@ -42,7 +42,7 @@
         height: 100vh;
       }
 
-      /* Sinematik vignette — bloom yok, bedava karanlık kenar. */
+      /* Cinematic vignette — no bloom, free dark border. */
       #vignette {
         position: fixed;
         inset: 0;
@@ -207,13 +207,13 @@
       <div class="brand">
         <span class="brand-dot"></span>
         <div>
-          <div class="brand-title">-COMPAT YOLU · @dimforge/rapier3d-compat</div>
-          <div class="brand-sub">eklenti yok · 3× esnext · await RAPIER.init()</div>
+          <div class="brand-title">-COMPAT TRACK · @dimforge/rapier3d-compat</div>
+          <div class="brand-sub">no plugins · 3× esnext · await RAPIER.init()</div>
         </div>
       </div>
 
-      <div class="panel-label">KURULUM DENETİMİ</div>
-      <pre id="report">RAPIER      ölçülüyor…</pre>
+      <div class="panel-label">SETUP AUDIT</div>
+      <pre id="report">RAPIER        measuring…</pre>
 
       <div class="stats">
         <div class="stat">
@@ -221,27 +221,27 @@
           <span id="stat-fps" class="stat-v">0</span>
         </div>
         <div class="stat">
-          <span class="stat-k">PAKET</span>
+          <span class="stat-k">PACKAGE</span>
           <span id="stat-paket" class="stat-v">COMPAT</span>
         </div>
         <div class="stat">
-          <span class="stat-k">DENETİM</span>
-          <span id="stat-durum" class="stat-v">ÖLÇÜLÜYOR</span>
+          <span class="stat-k">AUDIT</span>
+          <span id="stat-durum" class="stat-v">MEASURING</span>
         </div>
       </div>
 
       <p class="note">
-        DevTools → Network → filtre <b>wasm</b>: liste <b>BOŞ</b>. Motor base64
-        olarak JS bundle'ın içinde geliyor; ayrı istek yok, ayrı önbellek yok.
-        Saf ESM yolu için <code>npm run dev</code>.
+        DevTools → Network → filter <b>wasm</b>: list is <b>EMPTY</b>. Engine arrives as base64
+        inside the JS bundle; no separate request, no separate cache.
+        For the pure ESM track use <code>npm run dev</code>.
       </p>
     </section>
 
     <div id="controls">
       <kbd>R</kbd>
-      <span class="pill-sep">yeniden düşür</span>
+      <span class="pill-sep">drop again</span>
       <kbd>A</kbd>
-      <span class="pill-sep">denetimi yeniden ölç</span>
+      <span class="pill-sep">re-run audit</span>
     </div>
 
     <script type="module" src="/src/main-compat.ts"></script>

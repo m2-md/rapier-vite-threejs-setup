@@ -1,12 +1,12 @@
 import type { Sim } from "../sim";
 
 /**
- * Tek tuş: R = kutuları yeniden düşür. Otomatik süpürme, sonsuz spawn ya da
- * arka planda koşan ölçüm YOK — her ölçüm elle tetiklenir (A tuşu HUD'da).
+ * Single key: R = drop boxes again. No automatic sweeps, infinite spawn,
+ * or background measurement — every measurement is explicitly triggered (A key in HUD).
  */
 export function bindControls(sim: Sim): void {
-  // Başlangıç transformları bind anında okunur; createSim'deki yerleşim
-  // matematiği burada TEKRARLANMIYOR, olduğu gibi kopyalanıyor.
+  // Initial transforms are recorded at bind time; placement math
+  // from createSim is not repeated, copied as-is.
   const start = sim.bodies.map((body) => ({
     t: body.translation(),
     r: body.rotation(),

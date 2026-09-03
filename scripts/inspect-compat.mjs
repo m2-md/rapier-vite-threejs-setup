@@ -5,12 +5,12 @@ const src = readFileSync(
   "utf8",
 );
 
-// Dosyadaki en uzun base64 bloğunu bul — gömülü WASM bu.
+// Find longest base64 blob in file — this is the embedded WASM.
 const blob = src.match(/[A-Za-z0-9+/=]{5000,}/)?.[0] ?? "";
 const bytes = Buffer.from(blob, "base64").byteLength;
-const fmt = (n) => n.toLocaleString("tr-TR");
+const fmt = (n) => n.toLocaleString("en-US");
 
-console.log("rapier.mjs      :", fmt(src.length), "karakter");
-console.log("base64 blok     :", fmt(blob.length), "karakter");
-console.log("çözülmüş wasm   :", fmt(bytes), "bayt");
-console.log("base64 vergisi  : %" + ((blob.length / bytes - 1) * 100).toFixed(1));
+console.log("rapier.mjs      :", fmt(src.length), "characters");
+console.log("base64 blob     :", fmt(blob.length), "characters");
+console.log("decoded wasm    :", fmt(bytes), "bytes");
+console.log("base64 overhead : %" + ((blob.length / bytes - 1) * 100).toFixed(1));

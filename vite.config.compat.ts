@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 export default defineConfig({
   build: {
     target: "esnext",
-    // Bu depoda iki yol yan yana duruyor; -compat demosunun girişi ayrı.
-    // Yalnızca -compat kullanan bir projede bu satır gereksizdir.
+    // Both tracks coexist side by side in this repo; -compat demo has a separate entry.
+    // In a project using only -compat this line is unnecessary.
     rollupOptions: {
       input: fileURLToPath(new URL("./compat.html", import.meta.url)),
     },

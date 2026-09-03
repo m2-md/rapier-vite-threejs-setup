@@ -1,8 +1,8 @@
-// size/compat.ts — -compat yolunun TAMAMI. esm.ts'in ikizi, tek fark init().
+// size/compat.ts — Complete -compat track. Twin of esm.ts, sole difference is init().
 import RAPIER from "@dimforge/rapier3d-compat";
 
-// WASM base64 olarak paketin içinde; init() onu çözüp motoru ayağa kaldırır.
-// Bunu atlarsan World/collider çağrıları "not initialized" ile patlar.
+// WASM is inside the package as base64; init() decodes it and boots the engine.
+// Skipping this causes World/collider calls to fail with 'not initialized'.
 await RAPIER.init();
 
 const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });

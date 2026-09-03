@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    // ZORUNLU: @dimforge/rapier3d'nin "exports" alanı yok. "node16" ile
-    // tip çözümlemesi kırılır; "bundler" paketin "module"/"types" alanını okur.
+    // REQUIRED: @dimforge/rapier3d has no "exports" field. With "node16"
+    // type resolution breaks; "bundler" reads the package's "module"/"types" field.
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "strict": true,

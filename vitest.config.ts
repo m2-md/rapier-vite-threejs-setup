@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 export default defineConfig({
   plugins: [wasm()],
   test: {
-    // Saf ESM paketinde "main"/"exports" yok; Node çözümlemesi giriş
-    // dosyasını bulamıyor. Doğrudan gösteriyoruz.
+    // Pure ESM package lacks "main"/"exports"; Node resolution fails
+    // to find entry file. We point directly to it.
     alias: {
       "@dimforge/rapier3d": fileURLToPath(
         new URL("./node_modules/@dimforge/rapier3d/rapier.js", import.meta.url),

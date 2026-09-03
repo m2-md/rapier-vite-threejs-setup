@@ -7,20 +7,19 @@ import { createSim, type RapierApi } from "../src/sim";
 const ESM = RAPIER_ESM as unknown as RapierApi;
 
 /**
- * Bu test makale ↔ kod paritesinin bekçisi: makaledeki HUD bloğu ile
- * demonun bastığı beş satır birebir aynı olmak zorunda. Sayılar da gerçek:
- * timestep WASM'dan geri okunuyor, y determinizm koşusundan geliyor,
- * 1.570.176 ise dist/'teki .wasm dosyasının gerçek boyutu.
+ * Guardian of parity: the HUD block must match the five lines exactly.
+ * Real values: timestep read back from WASM, y from determinism run,
+ * and 1,570,176 is the actual byte size of dist/ .wasm file.
  */
-describe("HUD satırları", () => {
-  it("saf ESM yolunda makaledeki bloğu birebir basar", () => {
+describe("HUD lines", () => {
+  it("prints the exact block in pure ESM track", () => {
     const report = auditSetup(ESM);
     const probe = new ESM.World({ x: 0, y: 0, z: 0 });
     probe.timestep = 1 / 60;
     const sim = createSim(ESM, 24);
 
-    // Tarayıcıda bu bayrağı performance.getEntriesByType("resource") verir;
-    // node'da .wasm isteği yok, o yüzden ölçülen değeri elle koyuyoruz.
+    // In browser performance.getEntriesByType("resource") provides this flag;
+    // in Node there is no .wasm request, so measured value is injected manually.
     const lines = hudLines({
       report: { ...report, separateWasmRequest: true },
       timestep: probe.timestep,
@@ -31,15 +30,15 @@ describe("HUD satırları", () => {
     });
 
     expect(lines).toEqual([
-      "RAPIER      0.19.3",
-      "wasm sınırı ✓  (timestep 0.01666666753590107)",
-      "ayrı .wasm  ✓  (1.570.176 B, application/wasm)",
-      "determinizm ✓  (y = 0.49872392416000366)",
-      "gövde       24 · collider 25 · adım/kare 1",
+      "RAPIER        0.19.3",
+      "wasm boundary ✓  (timestep 0.01666666753590107)",
+      "separate wasm ✓  (1,570,176 B, application/wasm)",
+      "determinism   ✓  (y = 0.49872392416000366)",
+      "bodies        24 · collider 25 · steps/frame 1",
     ]);
   });
 
-  it("-compat yolunda üçüncü satır ✗ olur", () => {
+  it("becomes ✗ on the third line in -compat track", () => {
     const report = auditSetup(ESM);
     const sim = createSim(ESM, 24);
     const lines = hudLines({
@@ -52,7 +51,7 @@ describe("HUD satırları", () => {
     });
 
     expect(lines[2]).toBe(
-      "ayrı .wasm  ✗  (base64 gömülü, ağda .wasm isteği yok)",
+      "separate wasm ✗  (embedded base64, no .wasm request on network)",
     );
   });
 });

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import RAPIER from "@dimforge/rapier3d"; // init() YOK — saf ESM
+import RAPIER from "@dimforge/rapier3d"; // NO init() — pure ESM
 import { createSim } from "./sim";
 import { syncBodyToObject } from "./sync";
 import { FixedStepper } from "./stepper";
@@ -10,8 +10,8 @@ import { bindControls } from "./view/controls";
 const { scene, camera, renderer } = buildScene();
 const { world, bodies } = createSim(RAPIER, 24);
 
-// Her gövde için bir mesh. 24 kutu için bu tamamen yeterli;
-// on binlerce gövdeye çıkarsan InstancedMesh'e geçmen gerekir.
+// One mesh for each body. Completely sufficient for 24 boxes;
+// if scaling to tens of thousands of bodies, switch to InstancedMesh.
 const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
 const material = new THREE.MeshStandardMaterial({ color: 0x4cc9f0 });
 const meshes = bodies.map(() => {
@@ -21,7 +21,7 @@ const meshes = bodies.map(() => {
   return mesh;
 });
 
-// Sunum: HUD kurulum raporunu basar (A = yeniden ölç), R = yeniden düşür.
+// Presentation: HUD prints setup report (A = re-measure), R = drop again.
 const hud = createHud(RAPIER, { world, bodies }, "ESM");
 bindControls({ world, bodies });
 
@@ -33,11 +33,11 @@ renderer.setAnimationLoop(() => {
   const frameSeconds = (now - last) / 1000;
   last = now;
 
-  // Kaç adım gerekiyorsa o kadar; sıfır da olabilir, üç de.
+  // Run as many steps as required; can be zero or three.
   const steps = stepper.advance(frameSeconds);
   for (let i = 0; i < steps; i++) world.step();
 
-  // Fizik ilerledi; şimdi ekranı ona göre güncelle.
+  // Physics advanced; now update the screen accordingly.
   for (let i = 0; i < bodies.length; i++) {
     syncBodyToObject(bodies[i], meshes[i]);
   }

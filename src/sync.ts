@@ -1,7 +1,7 @@
 import type * as THREE from "three";
 import type RAPIER from "@dimforge/rapier3d";
 
-/** Rapier gövdesinin transform'unu bir three.js nesnesine yazar. */
+/** Writes Rapier body transform onto a three.js object. */
 export function syncBodyToObject(
   body: RAPIER.RigidBody,
   object: THREE.Object3D,

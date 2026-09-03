@@ -1,8 +1,8 @@
-// npm run cache-proof — makalenin görünmeyen farkı: tarayıcı önbelleği.
+// npm run cache-proof — verify browser caching difference.
 //
-// Uygulama kodunda TEK satır değiştirip iki yolu da yeniden build eder.
-// Saf ESM'de .wasm dosyasının içerik hash'i SABİT kalmalı (kullanıcı motoru
-// yeniden indirmez); -compat'ta bütün bundle yeni bir isimle çıkmalı.
+// Modifies a SINGLE line in app code and rebuilds both tracks.
+// In pure ESM, .wasm content hash must remain STABLE (user does not redownload engine);
+// in -compat, the entire bundle must be emitted with a new hash.
 import { build } from "vite";
 import { readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -11,7 +11,7 @@ const ROOT = new URL("..", import.meta.url).pathname;
 const OUT = "dist-cache";
 const PATCH = '\ndocument.title = "v2";\n';
 
-const fmt = (n) => n.toLocaleString("tr-TR");
+const fmt = (n) => n.toLocaleString("en-US");
 
 async function buildInto(configFile, input, id) {
   const outDir = join(OUT, id);
@@ -37,7 +37,7 @@ async function buildInto(configFile, input, id) {
   }));
 }
 
-/** Tek satır ekle → build → dosyayı ESKİ hâline geri yaz (kirli ağaç bırakma). */
+/** Append single line -> build -> revert file back to ORIGINAL state. */
 async function beforeAfter(configFile, entry, html, id) {
   const entryPath = join(ROOT, entry);
   const original = readFileSync(entryPath, "utf8");
@@ -60,15 +60,15 @@ function report(title, { before, after }) {
   const wasmB = pick(after, ".wasm");
 
   console.log(`\n# ${title}`);
-  console.log(`önce : ${jsA.name}  (${fmt(jsA.bytes)} B)`);
-  console.log(`sonra: ${jsB.name}  (${fmt(jsB.bytes)} B)`);
+  console.log(`before: ${jsA.name}  (${fmt(jsA.bytes)} B)`);
+  console.log(`after : ${jsB.name}  (${fmt(jsB.bytes)} B)`);
   if (wasmA && wasmB) {
     const same = wasmA.name === wasmB.name;
-    console.log(`wasm : ${wasmA.name}  (${fmt(wasmA.bytes)} B)`);
-    console.log(`       ${same ? "DEĞİŞMEDİ → önbellekten gelir" : "DEĞİŞTİ (beklenmedi!)"}`);
+    console.log(`wasm  : ${wasmA.name}  (${fmt(wasmA.bytes)} B)`);
+    console.log(`        ${same ? "UNCHANGED -> served from cache" : "CHANGED (unexpected!)"}`);
     return same;
   }
-  console.log("wasm : YOK — motor JS'in içinde, bundle'la birlikte yeniden iner");
+  console.log("wasm  : NONE — engine is inside JS, redownloaded along with bundle");
   return jsA.name !== jsB.name;
 }
 
@@ -85,18 +85,18 @@ const compat = await beforeAfter(
   "compat",
 );
 
-const esmOk = report("saf ESM yolu", esm);
-const compatOk = report("-compat yolu", compat);
+const esmOk = report("pure ESM track", esm);
+const compatOk = report("-compat track", compat);
 
-console.log("\nsonuç:");
+console.log("\nresult:");
 console.log(
-  `  saf ESM : uygulama kodu değişti, .wasm hash'i ${esmOk ? "SABİT" : "DEĞİŞTİ"}`,
+  `  pure ESM : application code changed, .wasm hash is ${esmOk ? "STABLE" : "CHANGED"}`,
 );
 console.log(
-  `  -compat : bundle ${compatOk ? "tamamen yenilendi" : "aynı kaldı (beklenmedi!)"}`,
+  `  -compat  : bundle ${compatOk ? "completely renewed" : "remained same (unexpected!)"}`,
 );
 
 if (!esmOk || !compatOk) {
-  console.error("\nBEKLENEN SONUÇ ÇIKMADI — makaledeki önbellek iddiası doğrulanamadı.");
+  console.error("\nUNEXPECTED RESULT — caching claim could not be verified.");
   process.exit(1);
 }

@@ -1,10 +1,10 @@
 import { defineConfig } from "vite";
 import wasm from "vite-plugin-wasm";
 
-// TUZAK KONFİGÜRASYONU — bunu kopyalama, ölçmek için var.
-// assetsInlineLimit .wasm'ın boyutunu (1.570.176 B) geçtiği an Vite dosyayı
-// base64 olarak JS'in içine gömer: ayrı .wasm isteği yok, önbellek ayrımı yok,
-// ve sonuçta -compat'tan bile büyük tek bir dosya.
+// TRAP CONFIGURATION — do not copy this, exists only for benchmarking.
+// Once assetsInlineLimit exceeds .wasm size (1,570,176 B), Vite embeds the file
+// as base64 into JS: no separate .wasm request, no cache separation,
+// resulting in a single file even larger than -compat.
 export default defineConfig({
   plugins: [wasm()],
   build: {

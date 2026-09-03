@@ -7,9 +7,9 @@ export interface Stage {
 }
 
 /**
- * Sunum katmanı. Fizikle hiçbir ilgisi yok: burada tek bir Rapier tipi geçmez.
+ * Presentation layer. Independent from physics: no Rapier types used here.
  * "Dark cinematic + neon": ACES tone mapping, PCFShadowMap, emissive neon
- * şeritler. Ağır post-process (bloom) YOK — sahne 30 nesne, kasmaması esas.
+ * strips. Heavy post-processing (bloom) omitted — 30 objects, priority is performance.
  */
 export function buildScene(): Stage {
   const canvas = document.getElementById("scene") as HTMLCanvasElement;
@@ -18,7 +18,7 @@ export function buildScene(): Stage {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   renderer.shadowMap.enabled = true;
-  // r185'te PCFSoftShadowMap deprecate edildi; PCFShadowMap hem geçerli hem ucuz.
+  // PCFSoftShadowMap was deprecated in r185; PCFShadowMap is valid and cheap.
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
@@ -36,7 +36,7 @@ export function buildScene(): Stage {
   camera.position.set(7.5, 5.2, 10.5);
   camera.lookAt(0, 1.2, 0);
 
-  // Zemin: collider cuboid(12, 0.1, 12) ile birebir hizalı — üst yüzey y = 0.1.
+  // Floor: collider cuboid(12, 0.1, 12) aligned exactly — top surface y = 0.1.
   const floor = new THREE.Mesh(
     new THREE.BoxGeometry(24, 0.2, 24),
     new THREE.MeshStandardMaterial({
@@ -48,14 +48,14 @@ export function buildScene(): Stage {
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Neon ızgara — pahalı değil, tek LineSegments çizimi.
+  // Neon grid — cheap single LineSegments draw.
   const grid = new THREE.GridHelper(24, 24, 0x22d3ee, 0x14304a);
   grid.position.y = 0.101;
   (grid.material as THREE.Material).transparent = true;
   (grid.material as THREE.Material).opacity = 0.28;
   scene.add(grid);
 
-  // Platformun kenarına dört emissive şerit: neon görünüm bloom olmadan.
+  // Four emissive strips along platform edges: neon look without bloom.
   const stripColors = [0x22d3ee, 0xa78bfa, 0x22d3ee, 0xf472b6];
   const stripGeometry = new THREE.BoxGeometry(24.4, 0.06, 0.12);
   stripColors.forEach((color, i) => {
@@ -92,7 +92,7 @@ export function buildScene(): Stage {
   key.shadow.bias = -0.0006;
   scene.add(key);
 
-  // Gölge atmayan iki renkli dolgu: kutuların kenarlarına neon kontur verir.
+  // Non-shadow-casting dual color rim lights: gives neon contour to box edges.
   const rimA = new THREE.PointLight(0x22d3ee, 55, 26);
   rimA.position.set(-7, 3.6, -6);
   scene.add(rimA);

@@ -1,52 +1,52 @@
 import { auditSetup, type SetupReport } from "../checklist";
 import type { RapierApi, Sim } from "../sim";
 
-const LABEL_WIDTH = 12;
+const LABEL_WIDTH = 14;
 const label = (text: string) => text.padEnd(LABEL_WIDTH);
-const fmt = (n: number) => n.toLocaleString("tr-TR");
+const fmt = (n: number) => n.toLocaleString("en-US");
 const mark = (ok: boolean) => (ok ? "✓" : "✗");
 
 export interface HudInput {
   report: SetupReport;
-  /** WASM'dan geri okunan timestep — f32'ye yuvarlanmış hâli. */
+  /** Timestep read back from WASM — rounded to f32. */
   timestep: number;
-  /** Ağdaki .wasm isteğinin baytı. 0 = ölçülemedi ya da istek yok. */
+  /** Size in bytes of .wasm request on network. 0 = unmeasured or no request. */
   wasmBytes: number;
   bodyCount: number;
   colliderCount: number;
   steps: number;
 }
 
-/** HUD'ın beş satırı. Saf fonksiyon: DOM yok, testte birebir doğrulanıyor. */
+/** Five lines of HUD. Pure function: no DOM, verified in tests. */
 export function hudLines(input: HudInput): string[] {
   const { report } = input;
   const wasm = report.separateWasmRequest
-    ? `${mark(true)}  (${input.wasmBytes > 0 ? `${fmt(input.wasmBytes)} B` : "boyut ölçülemedi"}, application/wasm)`
-    : `${mark(false)}  (base64 gömülü, ağda .wasm isteği yok)`;
+    ? `${mark(true)}  (${input.wasmBytes > 0 ? `${fmt(input.wasmBytes)} B` : "size not measured"}, application/wasm)`
+    : `${mark(false)}  (embedded base64, no .wasm request on network)`;
 
   return [
     label("RAPIER") + report.version,
-    label("wasm sınırı") +
+    label("wasm boundary") +
       `${mark(report.crossesWasmBoundary)}  (timestep ${input.timestep})`,
-    label("ayrı .wasm") + wasm,
-    label("determinizm") +
+    label("separate wasm") + wasm,
+    label("determinism") +
       `${mark(report.deterministic)}  (y = ${report.finalY})`,
-    label("gövde") +
-      `${input.bodyCount} · collider ${input.colliderCount} · adım/kare ${input.steps}`,
+    label("bodies") +
+      `${input.bodyCount} · collider ${input.colliderCount} · steps/frame ${input.steps}`,
   ];
 }
 
-/** Ağ sekmesine programatik bakış — HUD'daki bayt SABİT YAZILMAZ, ölçülür.
+/** Programmatic inspection of network entries — byte count is measured, not hardcoded.
  *
- * TUZAK: dev'de Vite aynı dosyayı üç ayrı URL'de servis eder —
- *   `rapier_wasm3d_bg.wasm?import`      → JS sarmalayıcı (~76 KB, text/javascript)
- *   `rapier_wasm3d_bg.wasm?import&url`  → URL modülü (~478 B, text/javascript)
- *   `rapier_wasm3d_bg.wasm`             → GERÇEK ikili (1.570.176 B, application/wasm)
- * `.includes(".wasm")` ile ilk eşleşmeyi almak sarmalayıcıyı ölçer ve onu
- * application/wasm diye etiketler. Sorgu dizesi OLMAYAN girdiyi arıyoruz.
+ * TRAP: In dev Vite serves the same file under three separate URLs:
+ *   `rapier_wasm3d_bg.wasm?import`      → JS wrapper (~76 KB, text/javascript)
+ *   `rapier_wasm3d_bg.wasm?import&url`  → URL module (~478 B, text/javascript)
+ *   `rapier_wasm3d_bg.wasm`             → REAL binary (1,570,176 B, application/wasm)
+ * Taking the first match with `.includes(".wasm")` measures the wrapper and labels it application/wasm.
+ * We specifically query for the entry WITHOUT a query string.
  *
- * Girdiler parametre: node'da `performance`/`location` yok, ama tuzağın kendisi
- * saf mantık — testte üç URL'yi elle verip doğru olanı seçtiğini kanıtlıyoruz. */
+ * Input parameter: In Node `performance`/`location` are absent, but the logic is pure —
+ * tests supply the three URLs manually to verify the correct one is chosen. */
 export interface ResourceEntryLike {
   name: string;
   encodedBodySize?: number;
@@ -77,7 +77,7 @@ export function measureWasmBytes(
 }
 
 export interface Hud {
-  /** Kare döngüsünden çağrılır: canlı satırı ve FPS'i günceller. */
+  /** Called from frame loop: updates live line and FPS. */
   update(steps: number): void;
 }
 
@@ -99,7 +99,7 @@ export function createHud(R: RapierApi, sim: Sim, paket: string): Hud {
 
   const render = () => {
     if (report === undefined) {
-      reportEl.textContent = label("RAPIER") + "ölçülüyor…";
+      reportEl.textContent = label("RAPIER") + "measuring…";
       return;
     }
     reportEl.textContent = hudLines({
@@ -112,12 +112,12 @@ export function createHud(R: RapierApi, sim: Sim, paket: string): Hud {
     }).join("\n");
   };
 
-  /** Denetim 2×120 adım koşar: bloke edici işi ilk kareden sonraya bırak. */
+  /** Audit runs 2x120 steps: defer blocking work to the next frame. */
   const audit = () => {
-    durumEl.textContent = "ÖLÇÜLÜYOR";
+    durumEl.textContent = "MEASURING";
     setTimeout(() => {
       report = auditSetup(R);
-      durumEl.textContent = "HAZIR";
+      durumEl.textContent = "READY";
       render();
     }, 0);
   };
