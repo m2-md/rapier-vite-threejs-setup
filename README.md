@@ -4,6 +4,8 @@
 **▶ [Live demo](https://m2-md.github.io/rapier-vite-threejs-setup/)** · [Source](https://github.com/m2-md/rapier-vite-threejs-setup)
 <!-- LINKS:END -->
 
+> Setting up Rapier physics in a modern Vite and Three.js application: asynchronous WebAssembly initialization and top-level await bundling.
+
 Working code for the article "A Seven-Character Difference, 484 Kilobytes". The
 subject is not one correct configuration but **a comparison of two setup paths** —
 which is why this project deliberately produces four build variants:
